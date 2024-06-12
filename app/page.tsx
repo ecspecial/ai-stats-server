@@ -28,7 +28,7 @@ interface StatResponse {
   totalGenerations: number;
   avgGenerationsPerUser: number;
   generationsPerDay: { date: string; amount: number; avgPerUser: number }[];
-  avgFeedbackRating: number | null;
+  avgFeedbackRating: string | null;
   feedbackCount: number;
   feedbackRatingsPerDay: { date: string; averageRating: number | null; count: number }[];
   feedbackDetailsPerDay: FeedbackDetail[];
