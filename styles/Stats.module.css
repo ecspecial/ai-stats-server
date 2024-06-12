@@ -1,0 +1,38 @@
+.card_header {
+    background-color: #f0f0f02d;
+    padding: 20px;
+    margin: 10px 0;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+.card {
+    background-color: #f0f0f03e;
+    padding: 20px;
+    margin: 10px 0;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .container {
+    padding: 20px;
+  }
+  
+  .header {
+    font-size: 24px;
+    color: #ffffff;
+    margin-bottom: 20px;
+  }
+
+  .refetchButton {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: rgb(23, 124, 218);
+    color: white;
+    border-radius: 5px;
+    border: 1px solid rgba(15, 7, 255, 0.749);
+    cursor: pointer;
+    margin-top: 20px;
+    box-shadow: 0 2px 4px rgb(23, 98, 218);
+    margin-bottom: 20px;
+  }
