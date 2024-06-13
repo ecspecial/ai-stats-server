@@ -9,7 +9,7 @@ export async function GET(req: NextRequest, res: NextResponse) {
 
         // Task 1: Count total users
         const totalUsers = await User.countDocuments();
-        // console.log(`Общее количество юзеров: ${totalUsers}`);
+        console.log(`Общее количество юзеров: ${totalUsers}`);
 
         // Task 2: Count users per day for the last 30 days
         // console.log("Количество юзеров по дням:");
