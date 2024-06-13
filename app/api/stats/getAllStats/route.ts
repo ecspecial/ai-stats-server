@@ -127,7 +127,7 @@ export async function GET(req: NextRequest, res: NextResponse) {
 
         // Task 4: Total amount of generations
         const totalGenerations = await Image.countDocuments();
-        // console.log(`Общее количество генераций: ${totalGenerations}`);
+        console.log(`Общее количество генераций: ${totalGenerations}`);
 
         // Task 6: Average amount of generations per user
         const avgGenerationsPerUserOverall = totalGenerations / totalUsers;
