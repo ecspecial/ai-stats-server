@@ -14,10 +14,12 @@ export async function GET(req: NextRequest, res: NextResponse) {
         // Task 2: Count users per day for the last 30 days
         // console.log("Количество юзеров по дням:");
         
-        const endDate = new Date();
         const startDate = new Date();
-        startDate.setUTCDate(endDate.getUTCDate() - 30);
+        startDate.setUTCDate(startDate.getUTCDate() - 30);
         startDate.setUTCHours(0, 0, 0, 0);
+
+        const endDate = new Date();
+        endDate.setUTCDate(endDate.getUTCDate());
         endDate.setUTCHours(23, 59, 59, 999);
 
         const usersPerDay = [];
