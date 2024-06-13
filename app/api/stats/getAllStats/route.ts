@@ -3,6 +3,7 @@ import { connectMongoDB } from '@/app/lib/mongodb/mongodb';
 import User from '@/app/lib/mongodb/models/user';
 import Image from '@/app/lib/mongodb/models/image';
 
+export const dynamic = 'force-dynamic'
 export async function GET(req: NextRequest, res: NextResponse) {
     try {
         await connectMongoDB();

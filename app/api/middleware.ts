@@ -15,11 +15,6 @@ const allowedOrigins = [
     // from the incoming request
     req.headers.get("origin")
 
-    // Set no-cache headers
-    res.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.headers.set('Pragma', 'no-cache');
-    res.headers.set('Expires', '0');
-
     // if the origin is an allowed one,
     // add it to the 'Access-Control-Allow-Origin' header
     if (allowedOrigins.includes(origin)) {
