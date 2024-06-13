@@ -5,6 +5,8 @@ import { NextPage } from 'next';
 
 import styles from '@/styles/Stats.module.css';
 
+import { Button, Spinner } from "@nextui-org/react";
+
 interface Stat {
   date: string;
   amount: number;
@@ -39,8 +41,11 @@ interface StatResponse {
 const Home: NextPage = () => {
   const [stats, setStats] = useState<StatResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
 
   const fetchStats = async () => {
+    setIsLoading(true);
     try {
       const response = await fetch('/api/stats/getAllStats', {
         method: 'GET',
@@ -52,11 +57,11 @@ const Home: NextPage = () => {
       }
 
       const data = await response.json();
-      console.log('data', data.stats)
       setStats(data.stats);
-      console.log("stats?.avgFeedbackRating", stats?.avgFeedbackRating)
     } catch (error: any) {
       setError(error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -71,7 +76,9 @@ const Home: NextPage = () => {
   return (
     <main className={styles.container}>
       <h1  className={styles.header}>{ `${'Статистика [месяц]'}`}</h1>
-      <button className={styles.refetchButton} onClick={fetchStats}>Обновить данные</button>
+      <Button color='primary' radius='sm' onPress={fetchStats}>
+        {isLoading ? <Spinner color="default" size='sm' /> : 'Обновить данные'}
+      </Button>
       {stats ? (
         <>
           <div className={styles.card}>Общее количество пользователей: {stats?.totalUsers}</div>
