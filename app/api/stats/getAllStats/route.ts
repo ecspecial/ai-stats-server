@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { connectMongoDB } from '@/app/lib/mongodb/mongodb';
 import User from '@/app/lib/mongodb/models/user';
 import Image from '@/app/lib/mongodb/models/image';
+import Payment from "@/app/lib/mongodb/models/payment";
 
 export const dynamic = 'force-dynamic'
 export async function GET(req: NextRequest, res: NextResponse) {
@@ -144,6 +145,66 @@ export async function GET(req: NextRequest, res: NextResponse) {
         const feedbackCount = feedbackRatings.length > 0 ? feedbackRatings[0].count : 0;
         // console.log(`Средняя оценка пользователей: ${avgFeedbackRating} (на основе ${feedbackCount} отзывов)`);
 
+        const proSubscriptionsCount = await Payment.countDocuments({ subscriptionType: 'Pro', state: { $in: ['completed', 'COMPLETED'] } });
+        const maxSubscriptionsCount = await Payment.countDocuments({ subscriptionType: 'Max', state: { $in: ['completed', 'COMPLETED'] } });
+        const monthlySubscriptionsCount = await Payment.countDocuments({ annual: false, state: { $in: ['completed', 'COMPLETED'] } });
+        const annualSubscriptionsCount = await Payment.countDocuments({ annual: true, state: { $in: ['completed', 'COMPLETED'] } });
+        const currentSubscriptionsCount = await Payment.countDocuments({ endDate: { $gt: new Date() }, state: { $in: ['completed', 'COMPLETED'] } });
+
+        const todayStart = new Date();
+        todayStart.setUTCHours(0, 0, 0, 0);
+        const todayEnd = new Date();
+        todayEnd.setUTCHours(23, 59, 59, 999);
+
+        const todayNewPurchasesCount = await Payment.countDocuments({
+            createdAt: { $gte: todayStart, $lt: todayEnd },
+            state: { $in: ["completed", "COMPLETED"] }
+        });
+
+        const nodaPaymentCount = await Payment.countDocuments({
+            paymentMethod: 'NODA',
+            state: { $in: ["completed", "COMPLETED"] }
+        });
+        
+        const cryptoPaymentCount = await Payment.countDocuments({
+            paymentMethod: 'CRYPTO',
+            state: { $in: ["completed", "COMPLETED"] }
+        });
+        
+        const basicCardPaymentCount = await Payment.countDocuments({
+            paymentMethod: 'BASIC_CARD',
+            state: { $in: ["completed", "COMPLETED"] }
+        });
+
+        const todayCompletedPaymentsTotal = await Payment.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: todayStart, $lt: todayEnd },
+                    state: { $in: ["completed", "COMPLETED"] }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalAmount: { $sum: "$amount" }
+                }
+            }
+        ]);
+
+        const allTimeCompletedPaymentsTotal = await Payment.aggregate([
+            {
+                $match: {
+                    state: { $in: ["completed", "COMPLETED"] }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalAmount: { $sum: "$amount" }
+                }
+            }
+        ]);
+
         const stats = {
             totalUsers,
             usersPerDay,
@@ -157,7 +218,18 @@ export async function GET(req: NextRequest, res: NextResponse) {
             feedbackRatingsPerDay,
             feedbackDetailsPerDay,
             onlineUsersPerDay,
-            avgImagesPerOnlineUserPerDay
+            avgImagesPerOnlineUserPerDay,
+            proSubscriptionsCount,
+            maxSubscriptionsCount,
+            monthlySubscriptionsCount,
+            annualSubscriptionsCount,
+            currentSubscriptionsCount,
+            todayNewPurchasesCount,
+            nodaPaymentCount,
+            cryptoPaymentCount,
+            basicCardPaymentCount,
+            todayCompletedPaymentsTotal: todayCompletedPaymentsTotal[0] ? todayCompletedPaymentsTotal[0].totalAmount : 0,
+            allTimeCompletedPaymentsTotal: allTimeCompletedPaymentsTotal[0] ? allTimeCompletedPaymentsTotal[0].totalAmount : 0
         };
 
         return NextResponse.json({ stats }, { status: 200 });

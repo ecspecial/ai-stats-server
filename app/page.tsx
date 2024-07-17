@@ -36,6 +36,17 @@ interface StatResponse {
   feedbackDetailsPerDay: FeedbackDetail[];
   onlineUsersPerDay: Stat[];
   avgImagesPerOnlineUserPerDay: { date: string; average: number }[];
+  proSubscriptionsCount: number;
+  maxSubscriptionsCount: number;
+  monthlySubscriptionsCount: number;
+  annualSubscriptionsCount: number;
+  currentSubscriptionsCount: number;
+  todayNewPurchasesCount: number;
+  nodaPaymentCount: number;
+  cryptoPaymentCount: number;
+  basicCardPaymentCount: number;
+  todayCompletedPaymentsTotal: number;
+  allTimeCompletedPaymentsTotal: number;
 }
 
 const Home: NextPage = () => {
@@ -87,6 +98,19 @@ const Home: NextPage = () => {
           <div className={styles.card}>Средний рейтинг по отзывам: {stats?.avgFeedbackRating ? parseFloat(stats.avgFeedbackRating).toFixed(2) : 'No data'}</div>
           <div className={styles.card}>Количество отзывов: {stats?.feedbackCount}</div>
           <div className={styles.card}>Количество пользователей зарегестрированных по реферальной программе: {stats?.refUsers}</div>
+
+
+          <div className={styles.card}>Общее количество подписок Pro: {stats?.proSubscriptionsCount}</div>
+          <div className={styles.card}>Общее количество подписок Max: {stats?.maxSubscriptionsCount}</div>
+          <div className={styles.card}>Общее количество подписок купленных на месяц: {stats?.monthlySubscriptionsCount}</div>
+          <div className={styles.card}>Общее количество подписок купленных на год: {stats?.annualSubscriptionsCount}</div>
+          <div className={styles.card}>Общее количество активных подписок: {stats?.currentSubscriptionsCount}</div>
+          <div className={styles.card}>Общее количество подписок купленных за сегодня: {stats?.todayNewPurchasesCount}</div>
+          <div className={styles.card}>Общее количество подписок купленных через NODA: {stats?.nodaPaymentCount}</div>
+          <div className={styles.card}>Общее количество подписок купленных через CRYPTO: {stats?.cryptoPaymentCount}</div>
+          <div className={styles.card}>Общее количество подписок купленных через BASIC_CARD: {stats?.basicCardPaymentCount}</div>
+          <div className={styles.card}>Общая сумма подписок купленных за сегодня, USD: {stats?.todayCompletedPaymentsTotal}</div>
+          <div className={styles.card}>Общая сумма подписок купленных за все время, USD: {stats?.allTimeCompletedPaymentsTotal}</div>
 
           <div className={styles.card}>
             <h2 className={styles.card_header}>Количество пользователей по дням</h2>
