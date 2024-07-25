@@ -37,7 +37,18 @@ export async function GET(req: NextRequest, res: NextResponse) {
                 });
             }
 
-            const user = await User.findById(image.userId);
+            let user;
+            try {
+                user = await User.findById(image.userId);
+            } catch (error) {
+                console.error(`Error fetching user with ID ${image.userId}:`, error);
+                continue; // Skip this image if the user is not found
+            }
+
+            if (!user) {
+                console.warn(`User with ID ${image.userId} not found, skipping image ID ${image._id}`);
+                continue; // Skip this image if the user is null
+            }
 
             const timeGeneratedAt = image.createdAt;
             const timeGeneration = (image.updatedAt.getTime() - image.createdAt.getTime()) / 1000; // Convert to seconds
