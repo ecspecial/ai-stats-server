@@ -1,3 +1,9 @@
+.navbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 20px;
+}
+
 .card_header {
     background-color: #f0f0f02d;
     padding: 20px;

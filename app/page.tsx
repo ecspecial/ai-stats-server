@@ -6,6 +6,7 @@ import { NextPage } from 'next';
 import styles from '@/styles/Stats.module.css';
 
 import { Button, Spinner } from "@nextui-org/react";
+import { useRouter } from 'next/navigation';
 
 interface Stat {
   date: string;
@@ -53,6 +54,7 @@ const Home: NextPage = () => {
   const [stats, setStats] = useState<StatResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
 
   const fetchStats = async () => {
@@ -86,6 +88,15 @@ const Home: NextPage = () => {
 
   return (
     <main className={styles.container}>
+      <div className={styles.navbar}>
+        <Button
+          color="primary"
+          radius="sm"
+          onPress={() => router.push('/images')}
+        >
+          Открыть статистику по картинкам
+        </Button>
+      </div>
       <h1  className={styles.header}>{ `${'Статистика [месяц]'}`}</h1>
       <Button color='primary' radius='sm' onPress={fetchStats}>
         {isLoading ? <Spinner color="default" size='sm' /> : 'Обновить данные'}
