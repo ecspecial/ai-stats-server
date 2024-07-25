@@ -46,7 +46,12 @@ export async function GET(req: NextRequest, res: NextResponse) {
             }
 
             if (!user) {
-                console.warn(`User with ID ${image.userId} not found, skipping image ID ${image._id}`);
+                console.warn(`User with ID ${image.userId} not found, deleting image ID ${image._id}`);
+                try {
+                    await Image.findByIdAndDelete(image._id);
+                } catch (deleteError) {
+                    console.error(`Error deleting image with ID ${image._id}:`, deleteError);
+                }
                 continue; // Skip this image if the user is null
             }
 
