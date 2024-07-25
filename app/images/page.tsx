@@ -146,6 +146,7 @@ const ImageStats: NextPage = () => {
                 <Line type="monotone" dataKey="timeGeneration" stroke="#8884d8" activeDot={{ r: 8 }} />
               </LineChart>
             </ResponsiveContainer>
+            <p className="text-center mt-4">Время генерации указано в секундах</p>
           </div>
         </>
       ) : (
