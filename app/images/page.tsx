@@ -35,6 +35,7 @@ const ImageStats: NextPage = () => {
   const [selectedDay, setSelectedDay] = useState<string | undefined>(undefined);
   const [selectedSubscription, setSelectedSubscription] = useState<string>("All");
   const [selectedOverallSubscription, setSelectedOverallSubscription] = useState<string>("All");
+  const [overallChartData, setOverallChartData] = useState<{ date: string; totalTime: number }[]>([]);
 
   const router = useRouter();
 
@@ -65,6 +66,26 @@ const ImageStats: NextPage = () => {
     fetchStats();
   }, []);
 
+  useEffect(() => {
+    if (stats) {
+      let data: { date: string; totalTime: number }[] = [];
+      if (selectedOverallSubscription === "All") {
+        data = stats.overallTimeGenerationData.map(item => ({
+          date: item.date,
+          totalTime: parseFloat(item.totalTime)
+        }));
+      } else if (["Free", "Pro", "Max"].includes(selectedOverallSubscription)) {
+        const subscriptionType = selectedOverallSubscription as keyof typeof stats.subscriptionGenerationData;
+        const subscriptionData = stats.subscriptionGenerationData[subscriptionType];
+        data = subscriptionData.map(item => ({
+          date: item.date,
+          totalTime: parseFloat(item.averageTime)
+        }));
+      }
+      setOverallChartData(data);
+    }
+  }, [selectedOverallSubscription, stats]);
+
   const handleDayChange = (value: string) => {
     setSelectedDay(value);
   };
@@ -78,11 +99,11 @@ const ImageStats: NextPage = () => {
   };
 
   const filteredData = stats?.imageGenerationData
-  .filter(data => selectedDay ? data.date === selectedDay : true)
-  .map(data => ({
-    ...data,
-    imageTimeData: (data.imageTimeData ?? []).filter(img => selectedSubscription === "All" || (selectedSubscription === "VIP" ? ["Pro", "Max"].includes(img.subscriptionType) : img.subscriptionType === selectedSubscription))
-  }));
+    .filter(data => selectedDay ? data.date === selectedDay : true)
+    .map(data => ({
+      ...data,
+      imageTimeData: (data.imageTimeData ?? []).filter(img => selectedSubscription === "All" || (selectedSubscription === "VIP" ? ["Pro", "Max"].includes(img.subscriptionType) : img.subscriptionType === selectedSubscription))
+    }));
 
   const chartData = filteredData?.flatMap(data => data.imageTimeData.map(img => ({
     date: data.date,
@@ -91,33 +112,18 @@ const ImageStats: NextPage = () => {
     subscriptionType: img.subscriptionType
   })));
 
-  const overallChartData = stats?.overallTimeGenerationData
-    .filter(data => selectedOverallSubscription === "All" ||
-      (selectedOverallSubscription === "Free" && stats.subscriptionGenerationData.Free.some(subData => subData.date === data.date)) ||
-      (selectedOverallSubscription === "Pro" && stats.subscriptionGenerationData.Pro.some(subData => subData.date === data.date)) ||
-      (selectedOverallSubscription === "Max" && stats.subscriptionGenerationData.Max.some(subData => subData.date === data.date))
-    )
-    .map(data => ({
-      date: data.date,
-      totalTime: parseFloat(data.totalTime)
-    })) || [];
-
   if (error) {
     return <div className={styles.card}>Error: {error}</div>;
   }
 
   return (
     <main className={styles.container}>
-        <div className={styles.navbar}>
-            <Button
-            color="primary"
-            radius="sm"
-            onPress={() => router.push('/')}
-            >
-            Открыть общую статистику
+      <div className={styles.navbar}>
+        <Button color="primary" radius="sm" onPress={() => router.push('/')}>
+          Открыть общую статистику
         </Button>
       </div>
-      <h1 className={styles.header}>{ `${'Статистика по генерации картиок [месяц]'}`}</h1>
+      <h1 className={styles.header}>{`${'Статистика по генерации картинок [месяц]'}`}</h1>
       <Button color='primary' radius='sm' onPress={fetchStats}>
         {isLoading ? <Spinner color="default" size='sm' /> : 'Обновить данные'}
       </Button>
@@ -171,8 +177,6 @@ const ImageStats: NextPage = () => {
             <p className="text-center mt-4">Время генерации указано в секундах</p>
           </div>
 
-
-          {/* Selectors for Overall Time Generation Graph */}
           <div className={styles.card}>
             <Select 
               placeholder="Выбрать тип подписки для общего времени"
