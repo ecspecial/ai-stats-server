@@ -47,11 +47,6 @@ export async function GET(req: NextRequest, res: NextResponse) {
 
         // Create a map to hold the data by date
         const dateMap = new Map<string, DateData>();
-        const subscriptionMap: SubscriptionMap = {
-            Free: new Map(),
-            Pro: new Map(),
-            Max: new Map()
-        };
 
         for (const image of images) {
             const date = image.createdAt.toISOString().split('T')[0];
@@ -82,39 +77,47 @@ export async function GET(req: NextRequest, res: NextResponse) {
                 continue; // Skip this image if the user is null
             }
 
+            const timeGeneratedAt = image.createdAt;
             const timeGeneration = (image.updatedAt.getTime() - image.createdAt.getTime()) / 1000; // Convert to seconds
 
-            // Update dateMap with total time and count
-            const dateData = dateMap.get(date)!;
-            dateData.dayImageCount += 1;
-            dateData.imageTimeData.push({
-                timeGeneratedAt: image.createdAt,
+            dateMap.get(date)!.dayImageCount += 1;
+            dateMap.get(date)!.imageTimeData.push({
+                timeGeneratedAt: timeGeneratedAt,
                 timeGeneration: timeGeneration,
                 subscriptionType: user.subscription
             });
-
-            // Initialize subscriptionMap data
-            if (!subscriptionMap[user.subscription].has(date)) {
-                subscriptionMap[user.subscription].set(date, {
-                    date: date,
-                    imageCount: 0,
-                    totalTime: 0
-                });
-            }
-
-            // Update subscriptionMap with image count and time
-            const subMapData = subscriptionMap[user.subscription].get(date)!;
-            subMapData.imageCount += 1;
-            subMapData.totalTime += timeGeneration;
         }
 
         // Convert the map to an array and sort it by date
-        const imageGenerationData = Array.from(dateMap.values()).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-            .map(dayData => ({
-                date: dayData.date,
-                averageTime: dayData.dayImageCount > 0 ? (dayData.imageTimeData.reduce((sum, data) => sum + data.timeGeneration, 0) / dayData.dayImageCount).toFixed(2) : '0',
-                dayImageCount: dayData.dayImageCount
-            }));
+        const imageGenerationData = Array.from(dateMap.values()).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+        // Initialize subscription data maps
+        const subscriptionMap: SubscriptionMap = {
+            Free: new Map(),
+            Pro: new Map(),
+            Max: new Map()
+        };
+
+        // Calculate subscriptionGenerationData and overallTimeGenerationData
+        Array.from(dateMap.values()).forEach(dateData => {
+            dateData.imageTimeData.forEach(data => {
+                const subscriptionType = data.subscriptionType;
+
+                // Initialize subscriptionMap data
+                if (!subscriptionMap[subscriptionType].has(dateData.date)) {
+                    subscriptionMap[subscriptionType].set(dateData.date, {
+                        date: dateData.date,
+                        imageCount: 0,
+                        totalTime: 0
+                    });
+                }
+
+                // Update subscriptionMap with image count and time
+                const subMapData = subscriptionMap[subscriptionType].get(dateData.date)!;
+                subMapData.imageCount += 1;
+                subMapData.totalTime += data.timeGeneration;
+            });
+        });
 
         // Convert subscriptionMap to an array and sort it by date
         const subscriptionGenerationData = {

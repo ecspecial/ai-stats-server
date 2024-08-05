@@ -7,7 +7,6 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import styles from '@/styles/Stats.module.css';
 import { useRouter } from 'next/navigation';
 
-
 interface ImageData {
   date: string;
   dayImageCount: number;
@@ -21,6 +20,12 @@ interface ImageData {
 interface ImageStatsResponse {
   totalImages: number;
   imageGenerationData: ImageData[];
+  subscriptionGenerationData: {
+    Free: { date: string; averageTime: string; imageCount: number }[];
+    Pro: { date: string; averageTime: string; imageCount: number }[];
+    Max: { date: string; averageTime: string; imageCount: number }[];
+  };
+  overallTimeGenerationData: { date: string; totalTime: string }[];
 }
 
 const ImageStats: NextPage = () => {
@@ -29,6 +34,7 @@ const ImageStats: NextPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDay, setSelectedDay] = useState<string | undefined>(undefined);
   const [selectedSubscription, setSelectedSubscription] = useState<string>("All");
+  const [selectedOverallSubscription, setSelectedOverallSubscription] = useState<string>("All");
 
   const router = useRouter();
 
@@ -66,6 +72,10 @@ const ImageStats: NextPage = () => {
     setSelectedSubscription(value);
   };
 
+  const handleOverallSubscriptionChange = (value: string) => {
+    setSelectedOverallSubscription(value);
+  };
+
   const filteredData = stats?.imageGenerationData
   .filter(data => selectedDay ? data.date === selectedDay : true)
   .map(data => ({
@@ -79,6 +89,17 @@ const ImageStats: NextPage = () => {
     timeGeneration: img.timeGeneration,
     subscriptionType: img.subscriptionType
   })));
+
+  const overallChartData = stats?.overallTimeGenerationData
+    .filter(data => selectedOverallSubscription === "All" ||
+      (selectedOverallSubscription === "Free" && stats.subscriptionGenerationData.Free.some(subData => subData.date === data.date)) ||
+      (selectedOverallSubscription === "Pro" && stats.subscriptionGenerationData.Pro.some(subData => subData.date === data.date)) ||
+      (selectedOverallSubscription === "Max" && stats.subscriptionGenerationData.Max.some(subData => subData.date === data.date))
+    )
+    .map(data => ({
+      date: data.date,
+      totalTime: parseFloat(data.totalTime)
+    })) || [];
 
   if (error) {
     return <div className={styles.card}>Error: {error}</div>;
@@ -147,6 +168,41 @@ const ImageStats: NextPage = () => {
               </LineChart>
             </ResponsiveContainer>
             <p className="text-center mt-4">Время генерации указано в секундах</p>
+          </div>
+
+
+          {/* Selectors for Overall Time Generation Graph */}
+          <div className={styles.card}>
+            <Select 
+              placeholder="Выбрать тип подписки для общего времени"
+              onChange={(e) => handleOverallSubscriptionChange(e.target.value)}
+              value={selectedOverallSubscription}
+            >
+              <SelectItem key="All" value="All">All</SelectItem>
+              <SelectItem key="Free" value="Free">Free</SelectItem>
+              <SelectItem key="Pro" value="Pro">Pro</SelectItem>
+              <SelectItem key="Max" value="Max">Max</SelectItem>
+            </Select>
+          </div>
+
+          <div className={styles.card}>
+            <h2>Общее время генерации по дням</h2>
+            <ResponsiveContainer width="100%" height={400}>
+              <LineChart
+                data={overallChartData}
+                margin={{
+                  top: 5, right: 30, left: 20, bottom: 5,
+                }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="totalTime" stroke="#82ca9d" activeDot={{ r: 8 }} />
+              </LineChart>
+            </ResponsiveContainer>
+            <p className="text-center mt-4">Общее время генерации указано в секундах</p>
           </div>
         </>
       ) : (
