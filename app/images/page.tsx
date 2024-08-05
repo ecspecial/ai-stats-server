@@ -77,11 +77,11 @@ const ImageStats: NextPage = () => {
   };
 
   const filteredData = stats?.imageGenerationData
-    .filter(data => selectedDay ? data.date === selectedDay : true)
-    .map(data => ({
-      ...data,
-      imageTimeData: data.imageTimeData.filter(img => selectedSubscription === "All" || (selectedSubscription === "VIP" ? ["Pro", "Max"].includes(img.subscriptionType) : img.subscriptionType === selectedSubscription))
-    }));
+  .filter(data => selectedDay ? data.date === selectedDay : true)
+  .map(data => ({
+    ...data,
+    imageTimeData: (data.imageTimeData ?? []).filter(img => selectedSubscription === "All" || (selectedSubscription === "VIP" ? ["Pro", "Max"].includes(img.subscriptionType) : img.subscriptionType === selectedSubscription))
+  }));
 
   const chartData = filteredData?.flatMap(data => data.imageTimeData.map(img => ({
     date: data.date,
