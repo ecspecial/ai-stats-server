@@ -51,6 +51,7 @@ const ImageStats: NextPage = () => {
       }
 
       const data = await response.json();
+      console.log('data', data)
       setStats(data);
       setSelectedDay(data.imageGenerationData[0]?.date); // Set initial selected day
     } catch (error: any) {

@@ -48,6 +48,7 @@ export async function GET(req: NextRequest, res: NextResponse) {
         // Create a map to hold the data by date
         const dateMap = new Map<string, DateData>();
 
+        // Collect user data and calculate image times
         for (const image of images) {
             const date = image.createdAt.toISOString().split('T')[0];
 
@@ -77,12 +78,11 @@ export async function GET(req: NextRequest, res: NextResponse) {
                 continue; // Skip this image if the user is null
             }
 
-            const timeGeneratedAt = image.createdAt;
             const timeGeneration = (image.updatedAt.getTime() - image.createdAt.getTime()) / 1000; // Convert to seconds
 
             dateMap.get(date)!.dayImageCount += 1;
             dateMap.get(date)!.imageTimeData.push({
-                timeGeneratedAt: timeGeneratedAt,
+                timeGeneratedAt: image.createdAt,
                 timeGeneration: timeGeneration,
                 subscriptionType: user.subscription
             });
@@ -98,12 +98,11 @@ export async function GET(req: NextRequest, res: NextResponse) {
             Max: new Map()
         };
 
-        // Calculate subscriptionGenerationData and overallTimeGenerationData
-        Array.from(dateMap.values()).forEach(dateData => {
-            dateData.imageTimeData.forEach(data => {
-                const subscriptionType = data.subscriptionType;
+        // Calculate subscription-specific data
+        for (const dateData of imageGenerationData) {
+            for (const imageTimeData of dateData.imageTimeData) {
+                const { subscriptionType, timeGeneration } = imageTimeData;
 
-                // Initialize subscriptionMap data
                 if (!subscriptionMap[subscriptionType].has(dateData.date)) {
                     subscriptionMap[subscriptionType].set(dateData.date, {
                         date: dateData.date,
@@ -112,12 +111,11 @@ export async function GET(req: NextRequest, res: NextResponse) {
                     });
                 }
 
-                // Update subscriptionMap with image count and time
-                const subMapData = subscriptionMap[subscriptionType].get(dateData.date)!;
-                subMapData.imageCount += 1;
-                subMapData.totalTime += data.timeGeneration;
-            });
-        });
+                const subData = subscriptionMap[subscriptionType].get(dateData.date)!;
+                subData.imageCount += 1;
+                subData.totalTime += timeGeneration;
+            }
+        }
 
         // Convert subscriptionMap to an array and sort it by date
         const subscriptionGenerationData = {
@@ -142,7 +140,7 @@ export async function GET(req: NextRequest, res: NextResponse) {
         };
 
         // Prepare overall time generation data
-        const overallTimeGenerationData = Array.from(dateMap.values()).map(dayData => ({
+        const overallTimeGenerationData = imageGenerationData.map(dayData => ({
             date: dayData.date,
             totalTime: dayData.dayImageCount > 0 ? (dayData.imageTimeData.reduce((sum, data) => sum + data.timeGeneration, 0) / dayData.dayImageCount).toFixed(2) : '0'
         }));
