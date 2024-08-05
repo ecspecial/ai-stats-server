@@ -51,7 +51,6 @@ const ImageStats: NextPage = () => {
       }
 
       const data = await response.json();
-      console.log('data', data);
       setStats(data);
       setSelectedDay(data.imageGenerationData[0]?.date); // Set initial selected day
     } catch (error: any) {
@@ -77,18 +76,20 @@ const ImageStats: NextPage = () => {
     setSelectedOverallSubscription(value);
   };
 
-  // Filter image data based on selected day and subscription type
   const filteredData = stats?.imageGenerationData
     .filter(data => selectedDay ? data.date === selectedDay : true)
     .map(data => ({
       ...data,
-      imageTimeData: data.imageTimeData ? data.imageTimeData.filter(img =>
-        selectedSubscription === "All" ||
-        (selectedSubscription === "VIP" ? ["Pro", "Max"].includes(img.subscriptionType) : img.subscriptionType === selectedSubscription)
-      ) : []
+      imageTimeData: data.imageTimeData.filter(img => selectedSubscription === "All" || (selectedSubscription === "VIP" ? ["Pro", "Max"].includes(img.subscriptionType) : img.subscriptionType === selectedSubscription))
     }));
 
-  // Filter overall time generation data based on selected subscription type
+  const chartData = filteredData?.flatMap(data => data.imageTimeData.map(img => ({
+    date: data.date,
+    timeGeneratedAt: new Date(img.timeGeneratedAt).toLocaleTimeString(),
+    timeGeneration: img.timeGeneration,
+    subscriptionType: img.subscriptionType
+  })));
+
   const overallChartData = stats?.overallTimeGenerationData
     .filter(data => selectedOverallSubscription === "All" ||
       (selectedOverallSubscription === "Free" && stats.subscriptionGenerationData.Free.some(subData => subData.date === data.date)) ||
@@ -106,16 +107,16 @@ const ImageStats: NextPage = () => {
 
   return (
     <main className={styles.container}>
-      <div className={styles.navbar}>
-        <Button
-          color="primary"
-          radius="sm"
-          onPress={() => router.push('/')}
-        >
-          Открыть общую статистику
+        <div className={styles.navbar}>
+            <Button
+            color="primary"
+            radius="sm"
+            onPress={() => router.push('/')}
+            >
+            Открыть общую статистику
         </Button>
       </div>
-      <h1 className={styles.header}>{`${'Статистика по генерации картинок [месяц]'}`}</h1>
+      <h1 className={styles.header}>{ `${'Статистика по генерации картиок [месяц]'}`}</h1>
       <Button color='primary' radius='sm' onPress={fetchStats}>
         {isLoading ? <Spinner color="default" size='sm' /> : 'Обновить данные'}
       </Button>
@@ -123,8 +124,7 @@ const ImageStats: NextPage = () => {
       {stats ? (
         <>
           <div className={styles.card}>Всего сгенерировано картинок: {stats.totalImages}</div>
-
-          {/* Selectors for Subscription-Specific Graph */}
+          
           <div className={styles.card}>
             <Select 
               placeholder="Выбрать день"
@@ -152,15 +152,9 @@ const ImageStats: NextPage = () => {
           </div>
 
           <div className={styles.card}>
-            <h2>Time Generation by Subscription Type</h2>
             <ResponsiveContainer width="100%" height={400}>
               <LineChart
-                data={filteredData?.flatMap(data => data.imageTimeData.map(img => ({
-                  date: data.date,
-                  timeGeneratedAt: new Date(img.timeGeneratedAt).toLocaleTimeString(),
-                  timeGeneration: img.timeGeneration,
-                  subscriptionType: img.subscriptionType
-                }))) || []}
+                data={chartData}
                 margin={{
                   top: 5, right: 30, left: 20, bottom: 5,
                 }}
@@ -175,6 +169,7 @@ const ImageStats: NextPage = () => {
             </ResponsiveContainer>
             <p className="text-center mt-4">Время генерации указано в секундах</p>
           </div>
+
 
           {/* Selectors for Overall Time Generation Graph */}
           <div className={styles.card}>
