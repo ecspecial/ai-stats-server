@@ -36,6 +36,7 @@ const ImageStats: NextPage = () => {
   const [selectedSubscription, setSelectedSubscription] = useState<string>("All");
   const [selectedOverallSubscription, setSelectedOverallSubscription] = useState<string>("All");
   const [overallChartData, setOverallChartData] = useState<{ date: string; totalTime: number }[]>([]);
+  const [selectedOverallDay, setSelectedOverallDay] = useState<string>("All");
 
   const router = useRouter();
 
@@ -52,9 +53,8 @@ const ImageStats: NextPage = () => {
       }
 
       const data = await response.json();
-      // console.log('data', data)
       setStats(data);
-      setSelectedDay(data.imageGenerationData[0]?.date); // Set initial selected day
+      setSelectedDay(data.imageGenerationData[0]?.date);
     } catch (error: any) {
       setError(error.message);
     } finally {
@@ -98,6 +98,14 @@ const ImageStats: NextPage = () => {
     setSelectedOverallSubscription(value);
   };
 
+  const handleOverallDayChange = (value: string) => {
+    setSelectedOverallDay(value);
+  };
+
+  const handleResetOverallDay = () => {
+    setSelectedOverallDay("All");
+  };
+
   const filteredData = stats?.imageGenerationData
     .filter(data => selectedDay ? data.date === selectedDay : true)
     .map(data => ({
@@ -112,6 +120,9 @@ const ImageStats: NextPage = () => {
     subscriptionType: img.subscriptionType
   })));
 
+  const overallFilteredData = overallChartData
+  .filter(data => selectedOverallDay === "All" || (selectedOverallDay ? data.date === selectedOverallDay : true));
+  
   if (error) {
     return <div className={styles.card}>Error: {error}</div>;
   }
@@ -179,6 +190,20 @@ const ImageStats: NextPage = () => {
 
           <div className={styles.card}>
             <Select 
+              placeholder="Выбрать день для общего времени"
+              onChange={(e) => handleOverallDayChange(e.target.value)}
+              value={selectedOverallDay ?? ""}
+            >
+              {stats.overallTimeGenerationData.map((data) => (
+                <SelectItem key={data.date} value={data.date}>
+                  {data.date}
+                </SelectItem>
+              ))}
+            </Select>
+          </div>
+
+          <div className={styles.card}>
+            <Select 
               placeholder="Выбрать тип подписки для общего времени"
               onChange={(e) => handleOverallSubscriptionChange(e.target.value)}
               value={selectedOverallSubscription}
@@ -190,11 +215,15 @@ const ImageStats: NextPage = () => {
             </Select>
           </div>
 
+          <Button fullWidth color="secondary" radius="sm" onPress={handleResetOverallDay}>
+              Показать все даты
+          </Button>
+
           <div className={styles.card}>
             <h2>Общее время генерации по дням</h2>
             <ResponsiveContainer width="100%" height={400}>
               <LineChart
-                data={overallChartData}
+                data={overallFilteredData}
                 margin={{
                   top: 5, right: 30, left: 20, bottom: 5,
                 }}
