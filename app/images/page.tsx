@@ -38,6 +38,9 @@ const ImageStats: NextPage = () => {
   const [overallChartData, setOverallChartData] = useState<{ date: string; totalTime: number }[]>([]);
   const [selectedOverallDay, setSelectedOverallDay] = useState<string>("All");
 
+  const [selectedOverallStartDay, setSelectedOverallStartDay] = useState<string>("All");
+  const [selectedOverallEndDay, setSelectedOverallEndDay] = useState<string>("All");
+
   const router = useRouter();
 
   const fetchStats = async () => {
@@ -103,6 +106,8 @@ const ImageStats: NextPage = () => {
   };
 
   const handleResetOverallDay = () => {
+    setSelectedOverallStartDay("All");
+    setSelectedOverallEndDay("All");
     setSelectedOverallDay("All");
   };
 
@@ -120,8 +125,21 @@ const ImageStats: NextPage = () => {
     subscriptionType: img.subscriptionType
   })));
 
-  const overallFilteredData = overallChartData
-  .filter(data => selectedOverallDay === "All" || (selectedOverallDay ? data.date === selectedOverallDay : true));
+  const overallFilteredData = overallChartData.filter(data => {
+    const dataDate = new Date(data.date);
+    const startDate = selectedOverallStartDay !== "All" ? new Date(selectedOverallStartDay) : null;
+    const endDate = selectedOverallEndDay !== "All" ? new Date(selectedOverallEndDay) : null;
+  
+    if (startDate && endDate) {
+      return dataDate >= startDate && dataDate <= endDate;
+    } else if (startDate) {
+      return dataDate >= startDate;
+    } else if (selectedOverallDay !== "All") {
+      return data.date === selectedOverallDay;
+    } else {
+      return true;
+    }
+  });
   
   if (error) {
     return <div className={styles.card}>Error: {error}</div>;
@@ -190,9 +208,23 @@ const ImageStats: NextPage = () => {
 
           <div className={styles.card}>
             <Select 
-              placeholder="Выбрать день для общего времени"
-              onChange={(e) => handleOverallDayChange(e.target.value)}
-              value={selectedOverallDay ?? ""}
+              placeholder="Выбрать начальную дату"
+              onChange={(e) => setSelectedOverallStartDay(e.target.value)}
+              value={selectedOverallStartDay ?? ""}
+            >
+              {stats.overallTimeGenerationData.map((data) => (
+                <SelectItem key={data.date} value={data.date}>
+                  {data.date}
+                </SelectItem>
+              ))}
+            </Select>
+          </div>
+
+          <div className={styles.card}>
+            <Select 
+              placeholder="Выбрать конечную дату"
+              onChange={(e) => setSelectedOverallEndDay(e.target.value)}
+              value={selectedOverallEndDay ?? ""}
             >
               {stats.overallTimeGenerationData.map((data) => (
                 <SelectItem key={data.date} value={data.date}>
