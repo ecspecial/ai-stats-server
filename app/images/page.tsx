@@ -247,9 +247,9 @@ const ImageStats: NextPage = () => {
             </Select>
           </div>
 
-          <Button fullWidth color="secondary" radius="sm" onPress={handleResetOverallDay}>
+          {/* <Button fullWidth color="secondary" radius="sm" onPress={handleResetOverallDay}>
               Показать все даты
-          </Button>
+          </Button> */}
 
           <div className={styles.card}>
             <h2>Общее время генерации по дням</h2>
