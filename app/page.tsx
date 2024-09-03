@@ -96,6 +96,9 @@ const Home: NextPage = () => {
         >
           Открыть статистику по картинкам
         </Button>
+        <Button color="primary" radius="sm" onPress={() => router.push('/users')}>
+          Открыть статистику пользователей
+        </Button>
       </div>
       <h1  className={styles.header}>{ `${'Статистика [месяц]'}`}</h1>
       <Button color='primary' radius='sm' onPress={fetchStats}>

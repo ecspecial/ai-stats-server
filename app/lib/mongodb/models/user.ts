@@ -14,6 +14,7 @@ export interface UserDocument {
     updatedAt: Date;
     credits: Number;
     favorites: string[];
+    favoriteModels: string[];
     referralCode: string;
     referredBy: string;
     referredByTime: Date;
@@ -25,6 +26,15 @@ export interface UserDocument {
     feedbackRating: Number;
     feedback1: string;
     feedback2: string;
+    serviceModalShown: boolean;
+    subscriptionId?: string;
+    subscriptionEndDate?: Date;
+    stripeSubscription?: boolean;
+    stripeSubscriptionId?: string;
+    stripeCustomerId?: string;
+    subscriptionGtmSent?: boolean;
+    registrationGtmSent?: boolean;
+    fingerprintId?: string;
   }
 
   const UserSchema = new Schema<UserDocument>({
@@ -65,6 +75,10 @@ export interface UserDocument {
       default: null,
     },
     favorites: {
+      type: [String],
+      default: []
+  },
+    favoriteModels: {
       type: [String],
       default: []
   },
@@ -110,6 +124,39 @@ export interface UserDocument {
       default: null,
     },
     feedback2: {
+      type: String,
+      default: null,
+    },
+    serviceModalShown: {
+      type: Boolean,
+      default: false,
+    },
+    subscriptionId: {
+      type: String,
+      default: null,
+    },
+    subscriptionEndDate: { type: Date, default: null },
+    stripeSubscription: {
+      type: Boolean,
+      default: false,
+    },
+    subscriptionGtmSent: {
+      type: Boolean,
+      default: false,
+    },
+    registrationGtmSent: {
+      type: Boolean,
+      default: false,
+    },
+    stripeSubscriptionId: {
+      type: String,
+      default: null,
+    },
+    stripeCustomerId: {
+      type: String,
+      default: null,
+    },
+    fingerprintId: {
       type: String,
       default: null,
     },
