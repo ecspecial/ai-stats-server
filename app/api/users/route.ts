@@ -5,7 +5,7 @@ import User from '@/app/lib/mongodb/models/user';
 export async function GET() {
     try {
         await connectMongoDB();
-        const users = await User.find({}, 'name email _id');
+        const users = await User.find({});
 
         return NextResponse.json(users, { status: 200 });
     } catch (error: any) {

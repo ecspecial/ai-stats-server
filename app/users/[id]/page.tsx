@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { NextPage } from 'next';
-import { Button } from "@nextui-org/react";
+import { Button, Select, SelectItem } from "@nextui-org/react";
 import styles from '@/styles/Stats.module.css';
 import { UserDocument } from '@/app/lib/mongodb/models/user';
 import { ImageDocument } from '@/app/lib/mongodb/models/image';
@@ -13,10 +13,14 @@ const USER_IMAGES_URL = process.env.NEXT_PUBLIC_USER_IMAGES_URL!;
 const UserDetail: NextPage = () => {
   const [user, setUser] = useState<UserDocument | null>(null);
   const [userImages, setUserImages] = useState<ImageDocument[]>([]);
+  const [filteredImages, setFilteredImages] = useState<ImageDocument[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const router = useRouter();
+
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+  const [showFavorites, setShowFavorites] = useState<'all' | 'favorites'>('all');
 
   const userId = usePathname().split('/').pop();
 
@@ -63,6 +67,7 @@ const UserDetail: NextPage = () => {
 
           const sortedImages = data.images.sort((a: ImageDocument, b: ImageDocument) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
           setUserImages(sortedImages);
+          setFilteredImages(sortedImages);
         } catch (error) {
           console.error('Error fetching user images:', error);
         }
@@ -100,6 +105,26 @@ const UserDetail: NextPage = () => {
       }
     }
   };
+
+  useEffect(() => {
+    let images = [...userImages];
+
+    // Filter by favorites
+    if (showFavorites === 'favorites' && user) {
+      images = images.filter(image => 
+        image.res_image && user.favorites.includes(image.res_image)
+      );
+    }
+
+    // Sort by date
+    if (sortOrder === 'newest') {
+      images.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } else if (sortOrder === 'oldest') {
+      images.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    }
+
+    setFilteredImages(images);
+  }, [userImages, sortOrder, showFavorites, user]);
 
   if (loading) {
     return <div>Loading...</div>;
@@ -158,9 +183,31 @@ const UserDetail: NextPage = () => {
 
       {userImages.length > 0 && (
         <div className={styles.imageGallery}>
-          <h2>User Images</h2>
+          <h2>Картинки пользователя</h2>
+          <div className={styles.filterControls}>
+            <Select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as 'newest' | 'oldest')}
+              placeholder="Фильтр по дате генерации"
+              label="Фильтр по дате генерации"
+              labelPlacement="outside"
+            >
+              <SelectItem key="newest" value="newest">Сначала новые</SelectItem>
+              <SelectItem key="oldest" value="oldest">Сначала старые</SelectItem>
+            </Select>
+            <Select
+              value={showFavorites}
+              onChange={(e) => setShowFavorites(e.target.value as 'all' | 'favorites')}
+              placeholder="Фильтр по любимым"
+              label="Фильтр по любимым"
+              labelPlacement="outside"
+            >
+              <SelectItem key="all" value="all">Все картинки</SelectItem>
+              <SelectItem key="favorites" value="favorites">Любимые</SelectItem>
+            </Select>
+          </div>
           <div className={styles.imageGrid}>
-            {userImages.map(image => (
+            {filteredImages.map(image => (
               <div key={image._id} className={styles.imageCard}>
                 <img src={`${USER_IMAGES_URL}${image.res_image}`} alt={`Generated image by ${user?.name}`} />
                 <p><strong>Prompt:</strong> {image.prompt}</p>
