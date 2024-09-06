@@ -178,17 +178,19 @@ const UsersList: NextPage = () => {
         </div>
       )}
 
-      {/* Pagination */}
-      <div className={styles.pagination}>
-        <p>Страница {currentPage} из {totalPages}</p>
-        <div className={styles.pageButtons}>
-          {Array.from({ length: totalPages }).map((_, index) => (
-            <Button key={index} onPress={() => handlePageChange(index + 1)}>
-              {index + 1}
-            </Button>
-          ))}
-        </div>
-      </div>
+    <div className={styles.card}>
+      <Select
+        placeholder="Выбрать страницу"
+        onChange={(e) => handlePageChange(Number(e.target.value))}
+        value={currentPage.toString()}
+      >
+        {Array.from({ length: totalPages }).map((_, index) => (
+          <SelectItem key={index + 1} value={(index + 1).toString()}>
+            Страница {index + 1}
+          </SelectItem>
+        ))}
+      </Select>
+    </div>
     </div>
   );
 };

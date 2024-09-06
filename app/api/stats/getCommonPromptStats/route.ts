@@ -34,7 +34,7 @@ export async function GET() {
     // Sort words by frequency in descending order and get the top 50
     const topWords = Object.entries(wordFrequency)
       .sort(([, a], [, b]) => b - a)
-      .slice(0, 50)
+      .slice(0, 100)
       .map(([word, count]) => ({ word, count }));
 
     return NextResponse.json({ topWords }, { status: 200 });
