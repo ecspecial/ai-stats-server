@@ -150,6 +150,9 @@ const UserDetail: NextPage = () => {
         <Button color="primary" radius="sm" onPress={() => router.push('/users')}>
           Открыть статистику пользователей
         </Button>
+        <Button color="primary" radius="sm" onPress={() => router.push('/prompts')}>
+          Открыть статистику промптов
+        </Button>
       </div>
       <h1>User Details</h1>
       {user && (

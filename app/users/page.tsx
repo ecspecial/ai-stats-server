@@ -11,7 +11,8 @@ const UsersList: NextPage = () => {
   const [users, setUsers] = useState<UserDocument[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
+  const [totalPages, setTotalPages] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [searchEmail, setSearchEmail] = useState('');
   const [searchId, setSearchId] = useState('');
@@ -20,22 +21,35 @@ const UsersList: NextPage = () => {
   const [activeFilter, setActiveFilter] = useState('All');
   const [sortOption, setSortOption] = useState('createdAt');
 
-  const fetchUsers = async () => {
+  const router = useRouter();
+
+  const fetchUsers = async (page = 1) => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/users', {
-        method: 'GET',
+      const params = {
+        searchEmail,
+        searchId,
+        searchName,
+        subscriptionFilter,
+        activeFilter,
+        sortOption,
+        page: page.toString(),
+      };
+
+      const response = await fetch(`/api/users?${params}`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params)
+
       });
 
       if (!response.ok) {
         throw new Error('Failed to fetch users');
       }
 
-      const data = await response.json();
-      setUsers(data);
-      console.log(data)
-      console.log(users);
+      const { users, totalUsers } = await response.json();
+      setUsers(users);
+      setTotalPages(Math.ceil(totalUsers / 100)); // Assuming 100 users per page
     } catch (error: any) {
       setError(error.message);
     } finally {
@@ -47,27 +61,14 @@ const UsersList: NextPage = () => {
     fetchUsers();
   }, []);
 
-  const filteredUsers = users
-    .filter(user =>
-      (searchEmail === '' || user.email.toLowerCase().includes(searchEmail.toLowerCase())) &&
-      (searchId === '' || user._id.includes(searchId)) &&
-      (searchName === '' || user.name.toLowerCase().includes(searchName.toLowerCase())) &&
-      (subscriptionFilter === 'All' || user.subscription === subscriptionFilter) &&
-      (activeFilter === 'All' || 
-        (activeFilter === 'Active' && new Date(user.subscriptionEndDate || 0) > new Date()) || 
-        (activeFilter === 'Overall' && user.subscriptionEndDate))
-    )
-    .sort((a, b) => {
-      if (sortOption === 'createdAt') {
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      } else if (sortOption === 'updatedAt') {
-        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-      } else if (sortOption === 'subscriptionEndDate') {
-        return new Date(b.subscriptionEndDate || 0).getTime() - new Date(a.subscriptionEndDate || 0).getTime();
-      }
-      return 0;
-    });
+  const handleFetchFilteredUsers = () => {
+    fetchUsers(1); // Reset to page 1 when fetching new data
+  };
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    fetchUsers(page);
+  };
 
   if (isLoading) {
     return <div className={styles.container}><Spinner /></div>;
@@ -76,11 +77,6 @@ const UsersList: NextPage = () => {
   if (error) {
     return <div className={styles.container}>Ошибка: {error}</div>;
   }
-
-  const handleClick = (id: string) => {
-    // Navigate to the user details page and pass the user object as a query parameter
-    router.push(`/users/${id}`);
-  };
 
   return (
     <div className={styles.container}>
@@ -93,40 +89,36 @@ const UsersList: NextPage = () => {
           Открыть статистику по картинкам
         </Button>
         <Button color="primary" radius="sm" onPress={() => router.push('/')}>
-        Открыть общую статистику
+          Открыть общую статистику
+        </Button>
+        <Button color="primary" radius="sm" onPress={() => router.push('/prompts')}>
+          Открыть статистику промптов
         </Button>
       </div>
       <h1 className={styles.header}>Список пользователей</h1>
 
+      {/* Filters */}
       <div className={styles.filters}>
         <Input
           placeholder="Поиск по Email"
           label="Поиск по Email"
-          labelPlacement="outside"
           value={searchEmail}
           onChange={(e) => setSearchEmail(e.target.value)}
-          className={styles.searchInput}
         />
         <Input
-          label="Поиск по ID"
-          labelPlacement="outside"
           placeholder="Поиск по ID"
+          label="Поиск по ID"
           value={searchId}
           onChange={(e) => setSearchId(e.target.value)}
-          className={styles.searchInput}
         />
         <Input
-          label="Поиск по Name"
-          labelPlacement="outside"
           placeholder="Поиск по Name"
+          label="Поиск по Name"
           value={searchName}
           onChange={(e) => setSearchName(e.target.value)}
-          className={styles.searchInput}
         />
         <Select
           label="Фильтр по подпискам"
-          labelPlacement="outside"
-          placeholder="Фильтр по подпискам"
           value={subscriptionFilter}
           onChange={(e) => setSubscriptionFilter(e.target.value)}
         >
@@ -137,8 +129,6 @@ const UsersList: NextPage = () => {
         </Select>
         <Select
           label="Активные подписки/Все подписки"
-          labelPlacement="outside"
-          placeholder="Активные подписки/Все подписки"
           value={activeFilter}
           onChange={(e) => setActiveFilter(e.target.value)}
         >
@@ -148,22 +138,22 @@ const UsersList: NextPage = () => {
         </Select>
         <Select
           label="Сортировка по:"
-          labelPlacement="outside"
-          placeholder="Сортировка по:"
           value={sortOption}
           onChange={(e) => setSortOption(e.target.value)}
         >
           <SelectItem key="createdAt" value="createdAt">Дате регистрации</SelectItem>
-          <SelectItem key="updatedAt" value="updatedAt">Последнему обновлению в базе</SelectItem>
+          <SelectItem key="updatedAt" value="updatedAt">Последнему обновлению</SelectItem>
           <SelectItem key="subscriptionEndDate" value="subscriptionEndDate">Окончанию подписки</SelectItem>
         </Select>
+        <Button onPress={handleFetchFilteredUsers}>Получить список пользователей</Button>
       </div>
 
-      {filteredUsers.length === 0 ? (
+      {/* Users Table */}
+      {users.length === 0 ? (
         <p>Пользователи не найдены</p>
       ) : (
-          <div className={styles.tableWrapper}>
-            <table className={styles.table}>
+        <div className={styles.tableWrapper}>
+          <table className={styles.table}>
             <thead>
               <tr>
                 <th>ID</th>
@@ -174,8 +164,8 @@ const UsersList: NextPage = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map(user => (
-                <tr key={user._id} onClick={() => handleClick(user._id)} className={styles.tableRow}>
+              {users.map(user => (
+                <tr key={user._id} onClick={() => router.push(`/users/${user._id}`)}>
                   <td>{user._id}</td>
                   <td>{user.name}</td>
                   <td>{user.email}</td>
@@ -186,7 +176,19 @@ const UsersList: NextPage = () => {
             </tbody>
           </table>
         </div>
-        )}
+      )}
+
+      {/* Pagination */}
+      <div className={styles.pagination}>
+        <p>Страница {currentPage} из {totalPages}</p>
+        <div className={styles.pageButtons}>
+          {Array.from({ length: totalPages }).map((_, index) => (
+            <Button key={index} onPress={() => handlePageChange(index + 1)}>
+              {index + 1}
+            </Button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };
