@@ -31,6 +31,7 @@ export interface ImageDocument {
     loras: string;
     res_image?: string;
     favorite?: boolean;
+    shared_gallery?: boolean;
 }
 
 const ImageSchema = new Schema<ImageDocument>({
@@ -61,7 +62,8 @@ const ImageSchema = new Schema<ImageDocument>({
     neg_prompt: { type: String, default: null },
     loras: { type: String, required: true },
     res_image: { type: String, default: null },
-    favorite:  { type: Boolean, default: false }
+    favorite:  { type: Boolean, default: false },
+    shared_gallery:  { type: Boolean, default: false },
 }, {
   timestamps: true
 });
