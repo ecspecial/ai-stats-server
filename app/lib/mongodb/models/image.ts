@@ -31,7 +31,10 @@ export interface ImageDocument {
     loras: string;
     res_image?: string;
     favorite?: boolean;
+    cost?: number;
     shared_gallery?: boolean;
+    gallery_image_likes?: number;
+    category?: string;
 }
 
 const ImageSchema = new Schema<ImageDocument>({
@@ -63,7 +66,10 @@ const ImageSchema = new Schema<ImageDocument>({
     loras: { type: String, required: true },
     res_image: { type: String, default: null },
     favorite:  { type: Boolean, default: false },
+    cost: { type: Number, required: false },
     shared_gallery:  { type: Boolean, default: false },
+    gallery_image_likes:  { type: Number, default: 0 },
+    category: { type: String, default: null },
 }, {
   timestamps: true
 });
