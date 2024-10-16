@@ -66,6 +66,9 @@ const TopWordsList: NextPage = () => {
         <Button color="primary" radius="sm" onPress={() => router.push('/users')}>
           Открыть статистику пользователей
         </Button>
+        <Button color="primary" radius="sm" onPress={() => router.push('/gallery')}>
+          Галерея
+        </Button>
       </div>
       <h1 className={styles.header}>Top 50 Words in Prompts</h1>
 

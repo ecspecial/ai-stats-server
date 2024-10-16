@@ -5,12 +5,17 @@ import { Button, Input, Spinner, Select, SelectItem, Tabs, Tab } from "@nextui-o
 import {Card, CardBody, CardFooter, Image} from "@nextui-org/react";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from "@nextui-org/react";
 import { ImageDocument as ImageData } from "../lib/mongodb/models/image";
+import { useRouter } from 'next/navigation';
 import styles from "@/styles/Stats.module.css";
 
 const USER_IMAGES_URL = process.env.NEXT_PUBLIC_USER_IMAGES_URL!;
 
 const ImageList: React.FC = () => {
+
+  const router = useRouter();
+
   const [images, setImages] = useState<ImageData[]>([]);
+  const [filteredImages, setFilteredImages] = useState<ImageData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [totalPages, setTotalPages] = useState(0);
@@ -23,6 +28,8 @@ const ImageList: React.FC = () => {
   const [isEditingLikes, setIsEditingLikes] = useState(false);
   const [likes, setLikes] = useState<number | null>(null);
   const [category, setCategory] = useState<string>("");
+  const [imageCategory, setImageCategory] = useState<string>("");
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("All");
 
   const handleLikesChange = (event: ChangeEvent<HTMLInputElement>) => {
     setLikes(Number(event.target.value));
@@ -56,6 +63,7 @@ const ImageList: React.FC = () => {
 
       const { images, totalImages } = await response.json();
       setImages(images);
+      setFilteredImages(images);
       setTotalPages(Math.ceil(totalImages / pageSize));
     } catch (error: any) {
       setError(error.message);
@@ -83,6 +91,19 @@ const ImageList: React.FC = () => {
     setCurrentPage(page);
   };
 
+  const handleCategoryFilterChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const value = event.target.value; // Extract the selected value from the event
+    setSelectedCategoryFilter(value);
+  
+    // Filter the images based on the selected category
+    if (value === "All") {
+      setFilteredImages(images); // Show all images if "All" is selected
+    } else {
+      const filtered = images.filter(image => image.category === value);
+      setFilteredImages(filtered);
+    }
+  };
+  
   const toggleSelecting = () => {
     setIsSelecting((prevState) => !prevState);
     setSelectedImages([]); // Reset selected images when toggling
@@ -118,6 +139,31 @@ const ImageList: React.FC = () => {
       alert(error.message);
     }
   };
+  
+  const handleAddImageToGallery = async (imageId: string) => {
+    // Ensure category is selected
+    console.log("imageCategory", imageCategory)
+    if (!imageCategory || imageCategory.trim() === "") {
+      console.log(1)
+      alert("Please select a category before adding the image to the gallery.");
+      return; // Stop execution if no category is selected
+    }
+  
+    try {
+      const response = await fetch("/api/images/galleryAdd", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageId, imageCategory }), // Send the image ID and category
+      });
+      if (!response.ok) {
+        throw new Error("Failed to add image to shared gallery");
+      }
+      // alert("Image added to the shared gallery successfully");
+      fetchImages(); // Refresh the images
+    } catch (error: any) {
+      alert(error.message);
+    }
+  };
 
   const handleDeleteFromGallery = async () => {
     try {
@@ -137,6 +183,23 @@ const ImageList: React.FC = () => {
       setSelectedImages([]); // Clear selection after the request
       setIsSelecting(false); // Exit selecting mode
       fetchImages(1, ""); // Refresh the images
+    } catch (error: any) {
+      alert(error.message);
+    }
+  };
+
+  const handleDeleteImageFromGallery = async (imageId: string) => {
+    try {
+      const response = await fetch("/api/images/galleryRemove", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageId }),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to remove image from shared gallery");
+      }
+      // alert("Image removed from the shared gallery successfully");
+      fetchImages(); // Refresh the images
     } catch (error: any) {
       alert(error.message);
     }
@@ -209,6 +272,26 @@ const ImageList: React.FC = () => {
 
   return (
     <div className={styles.container}>
+      <div className={styles.navbar}>
+        <Button
+          color="primary"
+          radius="sm"
+          onPress={() => router.push('/images')}
+        >
+          Открыть статистику по картинкам
+        </Button>
+        <Button color="primary" radius="sm" onPress={() => router.push('/')}>
+          Открыть общую статистику
+        </Button>
+        <Button color="primary" radius="sm" onPress={() => router.push('/prompts')}>
+          Открыть статистику промптов
+        </Button>
+        <Button color="primary" radius="sm" onPress={() => router.push('/users')}>
+          Открыть статистику пользователей
+        </Button>
+
+      </div>
+
       <h1>Список картинок</h1>
 
       {/* Tabs to switch between Gallery/Non-Gallery images */}
@@ -222,6 +305,22 @@ const ImageList: React.FC = () => {
         <Input placeholder="Поиск по промптам" value={tempPrompt} onChange={handleSearchChange} />
         <Button onClick={handleSearchSubmit}>Поиск</Button>
       </div>
+
+      <Select
+          placeholder="Категория"
+          value={selectedCategoryFilter}
+          onChange={handleCategoryFilterChange}
+        >
+          <SelectItem key="All" value="All">All</SelectItem>
+          <SelectItem key="Photography" value="Photography">Photography</SelectItem>
+          <SelectItem key="Animals" value="Animals">Animals</SelectItem>
+          <SelectItem key="Anime" value="Anime">Anime</SelectItem>
+          <SelectItem key="Architecture" value="Architecture">Architecture</SelectItem>
+          <SelectItem key="Character" value="Character">Character</SelectItem>
+          <SelectItem key="Food" value="Food">Food</SelectItem>
+          <SelectItem key="Sci-Fi" value="Sci-Fi">Sci-Fi</SelectItem>
+          <SelectItem key="Other" value="Other">Other</SelectItem>
+        </Select>
 
       {/* Toggle selecting mode */}
       <Button className={styles.galleryImageButtons} onClick={toggleSelecting}>
@@ -247,11 +346,11 @@ const ImageList: React.FC = () => {
       )}
 
       {/* Images Grid */}
-      {images.length === 0 ? (
+      {filteredImages.length === 0 ? (
         <p>Картинки не найдены</p>
       ) : (
         <div className={styles.imageGrid}>
-          {images.map((image) => (
+          {filteredImages.map((image) => (
             <div
               key={image._id}
               className={`${styles.imageCard} ${selectedImages.includes(image._id) ? styles.selected : ""}`}
@@ -273,6 +372,40 @@ const ImageList: React.FC = () => {
               <p>
                 <strong>Prompt:</strong> {image.prompt}
               </p>
+              {activeTab === "notInGallery" ? (
+                <div className={`${styles.ImageButtonsBar}`}>
+                  <Button
+                    color="success"
+                    onClick={async (e) => {
+                      e.preventDefault(); // Ensure no form submission or page reload
+                      await handleAddImageToGallery(image._id);
+                    }}
+                  >
+                    Добавить в галерею
+                  </Button>
+                  <Select
+                    placeholder="Категория"
+                    value={imageCategory}
+                    onChange={(e) => setImageCategory(e.target.value)}
+                  >
+                    <SelectItem key="Photography" value="Photography">Photography</SelectItem>
+                    <SelectItem key="Animals" value="Animals">Animals</SelectItem>
+                    <SelectItem key="Anime" value="Anime">Anime</SelectItem>
+                    <SelectItem key="Architecture" value="Architecture">Architecture</SelectItem>
+                    <SelectItem key="Character" value="Character">Character</SelectItem>
+                    <SelectItem key="Food" value="Food">Food</SelectItem>
+                    <SelectItem key="Sci-Fi" value="Sci-Fi">Sci-Fi</SelectItem>
+                    <SelectItem key="Other" value="Other">Other</SelectItem>
+                  </Select>
+                </div>
+              ) : (
+                <Button
+                  color="danger"
+                  onClick={() => handleDeleteImageFromGallery(image._id)}
+                >
+                  Удалить из галереи
+                </Button>
+              )}
             </div>
           ))}
         </div>
@@ -331,6 +464,7 @@ const ImageList: React.FC = () => {
                     <SelectItem key="Character" value="Character">Character</SelectItem>
                     <SelectItem key="Food" value="Food">Food</SelectItem>
                     <SelectItem key="Sci-Fi" value="Sci-Fi">Sci-Fi</SelectItem>
+                    <SelectItem key="Other" value="Other">Other</SelectItem>
                   </Select>
                 </p>
 
