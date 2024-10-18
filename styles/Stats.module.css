@@ -319,3 +319,38 @@
   flex-direction: column;
   gap: 10px;
 }
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pageButton, .prevNextButton {
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  padding: 5px 10px;
+  cursor: pointer;
+  border-radius: 5px;
+  color: #333;
+}
+
+.pageButton:hover, .prevNextButton:hover {
+  background-color: #e0e0e0;
+}
+
+.activePage {
+  background-color: gray;
+  color: white;
+}
+
+.prevNextButton:disabled {
+  background-color: #ddd;
+  cursor: not-allowed;
+}
+
+.ellipsis {
+  padding: 5px;
+  font-size: 16px;
+  color: #888;
+}

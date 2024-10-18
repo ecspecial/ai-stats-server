@@ -32,6 +32,7 @@ export interface ImageDocument {
     res_image?: string;
     favorite?: boolean;
     cost?: number;
+    user_shared_settings?: boolean;
     shared_gallery?: boolean;
     gallery_image_likes?: number;
     category?: string;
@@ -67,6 +68,7 @@ const ImageSchema = new Schema<ImageDocument>({
     res_image: { type: String, default: null },
     favorite:  { type: Boolean, default: false },
     cost: { type: Number, required: false },
+    user_shared_settings:  { type: Boolean, default: false },
     shared_gallery:  { type: Boolean, default: false },
     gallery_image_likes:  { type: Number, default: 0 },
     category: { type: String, default: null },

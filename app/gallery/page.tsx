@@ -7,6 +7,7 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure
 import { ImageDocument as ImageData } from "../lib/mongodb/models/image";
 import { useRouter } from 'next/navigation';
 import styles from "@/styles/Stats.module.css";
+import Pagination from "@/components/Pagination";
 
 const USER_IMAGES_URL = process.env.NEXT_PUBLIC_USER_IMAGES_URL!;
 
@@ -103,7 +104,7 @@ const ImageList: React.FC = () => {
       setFilteredImages(filtered);
     }
   };
-  
+
   const toggleSelecting = () => {
     setIsSelecting((prevState) => !prevState);
     setSelectedImages([]); // Reset selected images when toggling
@@ -131,7 +132,7 @@ const ImageList: React.FC = () => {
           }
         })
       );
-      alert("Images added to the shared gallery successfully");
+      // alert("Images added to the shared gallery successfully");
       setSelectedImages([]); // Clear selection after the request
       setIsSelecting(false); // Exit selecting mode
       fetchImages(1, "");
@@ -144,7 +145,6 @@ const ImageList: React.FC = () => {
     // Ensure category is selected
     console.log("imageCategory", imageCategory)
     if (!imageCategory || imageCategory.trim() === "") {
-      console.log(1)
       alert("Please select a category before adding the image to the gallery.");
       return; // Stop execution if no category is selected
     }
@@ -179,7 +179,7 @@ const ImageList: React.FC = () => {
           }
         })
       );
-      alert("Images removed from the shared gallery successfully");
+      // alert("Images removed from the shared gallery successfully");
       setSelectedImages([]); // Clear selection after the request
       setIsSelecting(false); // Exit selecting mode
       fetchImages(1, ""); // Refresh the images
@@ -239,7 +239,33 @@ const ImageList: React.FC = () => {
           throw new Error("Failed to update image data");
         }
 
-        alert("Image data updated successfully");
+        // alert("Image data updated successfully");
+        closeModal(); // Close the modal after a successful update
+        fetchImages(currentPage, searchPrompt); // Refresh images list
+      } catch (error: any) {
+        alert(error.message);
+      }
+    }
+  };
+
+  const handleUpdateImageCategory = async (image: ImageData, category: string) => {
+    if (image && category) {
+      try {
+        const response = await fetch("/api/images/updateGalleryData", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            imageId: image._id,
+            likes: image.gallery_image_likes ,
+            category,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to update image data");
+        }
+
+        // alert("Image data updated successfully");
         closeModal(); // Close the modal after a successful update
         fetchImages(currentPage, searchPrompt); // Refresh images list
       } catch (error: any) {
@@ -399,27 +425,44 @@ const ImageList: React.FC = () => {
                   </Select>
                 </div>
               ) : (
-                <Button
-                  color="danger"
-                  onClick={() => handleDeleteImageFromGallery(image._id)}
-                >
-                  Удалить из галереи
-                </Button>
+                <div className={`${styles.ImageButtonsBar}`}>
+                  <Button
+                    color="danger"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleDeleteImageFromGallery(image._id)
+                    }}
+                  >
+                    Удалить из галереи
+                  </Button>
+                  <Select
+                    placeholder="Категория"
+                    selectedKeys={[image.category ?? ""]}
+                    onChange={(e) => handleUpdateImageCategory(image, e.target.value ?? "")}
+                  >
+                    <SelectItem key="Photography" value="Photography">Photography</SelectItem>
+                    <SelectItem key="Animals" value="Animals">Animals</SelectItem>
+                    <SelectItem key="Anime" value="Anime">Anime</SelectItem>
+                    <SelectItem key="Architecture" value="Architecture">Architecture</SelectItem>
+                    <SelectItem key="Character" value="Character">Character</SelectItem>
+                    <SelectItem key="Food" value="Food">Food</SelectItem>
+                    <SelectItem key="Sci-Fi" value="Sci-Fi">Sci-Fi</SelectItem>
+                    <SelectItem key="Other" value="Other">Other</SelectItem>
+                  </Select>
+                </div>
+
               )}
             </div>
           ))}
         </div>
       )}
 
-      {/* Pagination Controls */}
       <div className={styles.card}>
-        <Select placeholder="Выбрать страницу" onChange={(e) => handlePageChange(Number(e.target.value))} value={currentPage.toString()}>
-          {Array.from({ length: totalPages }).map((_, index) => (
-            <SelectItem key={index + 1} value={(index + 1).toString()}>
-              Страница {index + 1}
-            </SelectItem>
-          ))}
-        </Select>
+        <Pagination
+          totalPages={totalPages}
+          currentPage={currentPage}
+          handlePageChange={handlePageChange}
+        />
       </div>
 
       {selectedImage && (

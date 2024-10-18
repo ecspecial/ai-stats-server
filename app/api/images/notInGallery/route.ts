@@ -12,7 +12,8 @@ export async function POST(req: NextRequest, res: NextResponse) {
     const query: any = {
       type_gen: 'txt2img',
       facelock_type: 'None',
-      shared_gallery: false, // Not in gallery
+      shared_gallery: false,
+      // user_shared_settings: true,
     };
 
     if (promptSearch) {
