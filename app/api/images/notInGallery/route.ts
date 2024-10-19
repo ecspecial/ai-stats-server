@@ -13,7 +13,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
       type_gen: 'txt2img',
       facelock_type: 'None',
       shared_gallery: false,
-      // user_shared_settings: true,
+      user_shared_settings: true,
     };
 
     if (promptSearch) {
