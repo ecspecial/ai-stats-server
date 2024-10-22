@@ -68,14 +68,47 @@ const ImageList: React.FC = () => {
       setTotalPages(Math.ceil(totalImages / pageSize));
     } catch (error: any) {
       setError(error.message);
-    } finally {
-      setIsLoading(false);
+    } 
+      finally {
+        setIsLoading(false);
+      }
+  };
+
+  const updateImagesWithoutReload = async (page = currentPage, promptSearch = "", tab = activeTab) => {
+    const route = tab === "notInGallery" ? "/api/images/notInGallery" : "/api/images/inGallery";
+
+    try {
+      const response = await fetch(route, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ page, promptSearch }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch images");
+      }
+
+      const { images, totalImages } = await response.json();
+      setImages(images);
+      setFilteredImages(images);
+      setTotalPages(Math.ceil(totalImages / 100)); // Assuming pageSize is 100
+    } catch (error: any) {
+      setError(error.message);
     }
   };
 
   // Fetch images on initial load
+  // useEffect(() => {
+  //   fetchImages(currentPage, searchPrompt);
+  // }, [currentPage]);
+
   useEffect(() => {
-    fetchImages(currentPage, searchPrompt);
+    const fetchImagesWithLoading = async () => {
+      setIsLoading(true);
+      await updateImagesWithoutReload(currentPage, searchPrompt);
+      setIsLoading(false);
+    };
+    fetchImagesWithLoading();
   }, [currentPage]);
 
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -85,7 +118,7 @@ const ImageList: React.FC = () => {
   const handleSearchSubmit = () => {
     setSearchPrompt(tempPrompt);
     setCurrentPage(1);
-    fetchImages(1, tempPrompt);
+    updateImagesWithoutReload(1, tempPrompt);
   };
 
   const handlePageChange = (page: number) => {
@@ -135,7 +168,7 @@ const ImageList: React.FC = () => {
       // alert("Images added to the shared gallery successfully");
       setSelectedImages([]); // Clear selection after the request
       setIsSelecting(false); // Exit selecting mode
-      fetchImages(1, "");
+      await updateImagesWithoutReload(currentPage);
     } catch (error: any) {
       alert(error.message);
     }
@@ -159,7 +192,7 @@ const ImageList: React.FC = () => {
         throw new Error("Failed to add image to shared gallery");
       }
       // alert("Image added to the shared gallery successfully");
-      fetchImages(); // Refresh the images
+      await updateImagesWithoutReload(currentPage);
     } catch (error: any) {
       alert(error.message);
     }
@@ -182,7 +215,7 @@ const ImageList: React.FC = () => {
       // alert("Images removed from the shared gallery successfully");
       setSelectedImages([]); // Clear selection after the request
       setIsSelecting(false); // Exit selecting mode
-      fetchImages(1, ""); // Refresh the images
+      await updateImagesWithoutReload(currentPage);
     } catch (error: any) {
       alert(error.message);
     }
@@ -199,7 +232,7 @@ const ImageList: React.FC = () => {
         throw new Error("Failed to remove image from shared gallery");
       }
       // alert("Image removed from the shared gallery successfully");
-      fetchImages(); // Refresh the images
+      await updateImagesWithoutReload(currentPage);
     } catch (error: any) {
       alert(error.message);
     }
