@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { NextPage } from 'next';
-import { Button, Select, SelectItem } from "@nextui-org/react";
+import { Button, Input, Select, SelectItem } from "@nextui-org/react";
 import styles from '@/styles/Stats.module.css';
 import { UserDocument } from '@/app/lib/mongodb/models/user';
 import { ImageDocument } from '@/app/lib/mongodb/models/image';
@@ -17,6 +17,10 @@ const UserDetail: NextPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editSubscription, setEditSubscription] = useState<string>('');
+  const [editCredits, setEditCredits] = useState<number>(0);
+  const [isUpdating, setIsUpdating] = useState(false);
   const router = useRouter();
 
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
@@ -46,6 +50,13 @@ const UserDetail: NextPage = () => {
       fetchUser();
     }
   }, [userId]);
+
+  useEffect(() => {
+    if (user) {
+      setEditSubscription(user.subscription);
+      setEditCredits(user.credits.valueOf()); // Convert Number to number
+    }
+  }, [user]);
 
   useEffect(() => {
     if (userId) {
@@ -106,12 +117,43 @@ const UserDetail: NextPage = () => {
     }
   };
 
+  const handleSaveChanges = async () => {
+    setIsUpdating(true);
+    try {
+      const response = await fetch(`/api/users/update/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          subscription: editSubscription,
+          credits: editCredits,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Error updating user');
+      }
+
+      // Update the user state with the new data
+      setUser(data.user);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating user:', error);
+      alert('Error updating user');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   useEffect(() => {
     let images = [...userImages];
 
     // Filter by favorites
     if (showFavorites === 'favorites' && user) {
-      images = images.filter(image => 
+      images = images.filter(image =>
         image.res_image && user.favorites.includes(image.res_image)
       );
     }
@@ -130,8 +172,8 @@ const UserDetail: NextPage = () => {
     return <div>Loading...</div>;
   }
 
-  if (error) {
-    return <div>Error: {error}</div>;
+  if (error || !user) {
+    return <div>Error: {error || 'User not found'}</div>;
   }
 
   return (
@@ -155,34 +197,86 @@ const UserDetail: NextPage = () => {
         </Button>
       </div>
       <h1>User Details</h1>
-      {user && (
-        <div className={styles.card}>
-          <p><strong>User ID:</strong> {user._id}</p>
-          <p><strong>Name:</strong> {user.name}</p>
-          <p><strong>Email:</strong> {user.email}</p>
-          <p><strong>Subscription:</strong> {user.subscription}</p>
-          <p><strong>Subscription End Date:</strong> {user.subscriptionEndDate ? new Date(user.subscriptionEndDate).toLocaleDateString() : 'N/A'}</p>
-          <p><strong>Credits:</strong> {user.credits.toString()}</p>
-          <p><strong>Registration Date:</strong> {new Date(user.createdAt).toLocaleDateString()}</p>
-          <p><strong>Last Updated:</strong> {new Date(user.updatedAt).toLocaleDateString()}</p>
-          <p><strong>Referral Code:</strong> {user.referralCode}</p>
-          <p><strong>Referred By:</strong> {user.referredBy || 'N/A'}</p>
-          <p><strong>Referred By Time:</strong> {user.referredByTime ? new Date(user.referredByTime).toLocaleDateString() : 'N/A'}</p>
-          <p><strong>Referred Users:</strong> {user.referrals.length > 0 ? user.referrals : 'None'}</p>
-          <p><strong>Visited Socials:</strong> {user.visitedSocials.join(', ') || 'None'}</p>
-          <p><strong>Feedback Submitted:</strong> {user.feedbackSubmitted ? 'Yes' : 'No'}</p>
-          <p><strong>Feedback Rating:</strong> {user.feedbackRating?.toString() || 'N/A'}</p>
-          <p><strong>Service Modal Shown:</strong> {user.serviceModalShown ? 'Yes' : 'No'}</p>
-          <p><strong>Gallery:</strong> <a href={`/gallery/${user._id}`} target="_blank">View Gallery</a></p>
-          <button
-            className={styles.deleteButton}
-            onClick={handleDeleteUser}
-            disabled={isDeleting}
-          >
-            {isDeleting ? 'Deleting...' : 'Delete User'}
-          </button>
-        </div>
-      )}
+      <div className={styles.card}>
+        <p><strong>User ID:</strong> {user._id}</p>
+        <p><strong>Name:</strong> {user.name}</p>
+        <p><strong>Email:</strong> {user.email}</p>
+
+        {isEditing ? (
+          <div>
+            <label>
+              <strong>Subscription:</strong>
+              <Select
+                value={editSubscription}
+                onChange={(e) => setEditSubscription(e.target.value)}
+                placeholder="Select Subscription"
+                labelPlacement="outside"
+              >
+                <SelectItem key="Free" value="Free">Free</SelectItem>
+                <SelectItem key="Pro" value="Pro">Pro</SelectItem>
+                <SelectItem key="Max" value="Max">Max</SelectItem>
+              </Select>
+            </label>
+            <br />
+            <label>
+              <strong>Credits:</strong>
+              <Input
+                type="number"
+                value={editCredits.toString()}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (typeof value === 'string') {
+                    setEditCredits(Number(value));
+                  }
+                }}
+              />
+            </label>
+            <br />
+            <button
+              className={`${styles.changesButton}`}
+              onClick={handleSaveChanges}
+              disabled={isUpdating}
+            >
+              {isUpdating ? 'Updating...' : 'Save Changes'}
+            </button>
+          </div>
+        ) : (
+          <>
+            <p><strong>Subscription:</strong> {user.subscription}</p>
+            <p><strong>Credits:</strong> {user.credits.toString()}</p>
+          </>
+        )}
+
+        <p><strong>Subscription End Date:</strong> {user.subscriptionEndDate ? new Date(user.subscriptionEndDate).toLocaleDateString() : 'N/A'}</p>
+        <p><strong>Registration Date:</strong> {new Date(user.createdAt).toLocaleDateString()}</p>
+        <p><strong>Last Updated:</strong> {new Date(user.updatedAt).toLocaleDateString()}</p>
+        <p><strong>Referral Code:</strong> {user.referralCode}</p>
+        <p><strong>Referred By:</strong> {user.referredBy || 'N/A'}</p>
+        <p><strong>Referred By Time:</strong> {user.referredByTime ? new Date(user.referredByTime).toLocaleDateString() : 'N/A'}</p>
+        <p><strong>Referred Users:</strong> {user.referrals.length > 0 ? user.referrals.join(', ') : 'None'}</p>
+        <p><strong>Visited Socials:</strong> {user.visitedSocials.join(', ') || 'None'}</p>
+        <p><strong>Feedback Submitted:</strong> {user.feedbackSubmitted ? 'Yes' : 'No'}</p>
+        <p><strong>Feedback Rating:</strong> {user.feedbackRating?.toString() || 'N/A'}</p>
+        <p><strong>Service Modal Shown:</strong> {user.serviceModalShown ? 'Yes' : 'No'}</p>
+        <p><strong>Gallery:</strong> <a href={`/gallery/${user._id}`} target="_blank">View Gallery</a></p>
+        <button
+          className={styles.deleteButton}
+          onClick={handleDeleteUser}
+          disabled={isDeleting}
+        >
+          {isDeleting ? 'Deleting...' : 'Delete User'}
+        </button>
+        <button
+          className={`${!isEditing ? styles.updateButton : ''} ${isEditing ? styles.updateButton_active : ''}`}
+          onClick={() => 
+            {
+              setIsEditing(!isEditing)
+          }
+          }
+        >
+          {isEditing ? 'Cancel Changes' : 'Update User'}
+        </button>
+      </div>
 
       {userImages.length > 0 && (
         <div className={styles.imageGallery}>

@@ -200,6 +200,47 @@
     background-color: #d9363e;
   }
 
+  .updateButton {
+    background-color: #4d85ff;
+    color: white;
+    padding: 10px 20px;
+    margin-top: 20px;
+    margin-left: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  .updateButton_active {
+    background-color: #ff4d4f;
+    color: white;
+    padding: 10px 20px;
+    margin-top: 20px;
+    margin-left: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+    
+  .updateButton:hover {
+    background-color: #467bed;
+  }
+
+  .changesButton {
+    background-color: #ff8009;
+    color: white;
+    padding: 5px 10px;
+    margin-bottom: 20px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+      
+  .changesButton:hover {
+    background-color: #cd6606;
+  }
+
   .imageGallery {
     padding: 20px;
     background-color: #282a2d;
