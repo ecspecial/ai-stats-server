@@ -160,6 +160,9 @@ const ImageStats: NextPage = () => {
         <Button color="primary" radius="sm" onPress={() => router.push('/gallery')}>
           Галерея
         </Button>
+        <Button color="primary" radius="sm" onPress={() => router.push('/subscriptions')}>
+          Подписки
+        </Button>
       </div>
       <h1 className={styles.header}>{`${'Статистика по генерации картинок [месяц]'}`}</h1>
       <Button color='primary' radius='sm' onPress={fetchStats}>

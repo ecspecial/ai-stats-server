@@ -348,6 +348,9 @@ const ImageList: React.FC = () => {
         <Button color="primary" radius="sm" onPress={() => router.push('/users')}>
           Открыть статистику пользователей
         </Button>
+        <Button color="primary" radius="sm" onPress={() => router.push('/subscriptions')}>
+          Подписки
+        </Button>
 
       </div>
 

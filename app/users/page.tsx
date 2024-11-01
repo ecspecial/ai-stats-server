@@ -97,6 +97,9 @@ const UsersList: NextPage = () => {
         <Button color="primary" radius="sm" onPress={() => router.push('/gallery')}>
           Галерея
         </Button>
+        <Button color="primary" radius="sm" onPress={() => router.push('/subscriptions')}>
+          Подписки
+        </Button>
       </div>
       <h1 className={styles.header}>Список пользователей</h1>
 
