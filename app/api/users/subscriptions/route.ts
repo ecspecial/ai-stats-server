@@ -6,13 +6,15 @@ export async function GET() {
   try {
     await connectMongoDB();
 
-    // Find users with subscriptions 'Free', 'Pro', or 'Max'
+    // Find users with subscriptions 'Pro' or 'Max' (excluding 'Free' users)
     const users = await User.find({
-      subscription: { $in: ['Free', 'Pro', 'Max'] },
+      subscription: { $in: ['Pro', 'Max'] },
     }).select('email name subscription subscriptionEndDate');
 
-    // Optionally, filter for active subscriptions (e.g., subscriptionEndDate in the future)
-    const activeUsers = users.filter(user => !user.subscriptionEndDate || user.subscriptionEndDate >= new Date());
+    // Filter for active subscriptions (subscriptionEndDate in the future)
+    const activeUsers = users.filter(user => 
+      user.subscriptionEndDate && new Date(user.subscriptionEndDate) >= new Date()
+    );
 
     return NextResponse.json({ activeUsers }, { status: 200 });
   } catch (error: any) {
