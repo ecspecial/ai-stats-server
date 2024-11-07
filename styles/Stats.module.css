@@ -395,3 +395,52 @@
   font-size: 16px;
   color: #888;
 }
+
+.datesContainer {
+  display: flex;
+  flex-direction: column;
+  /* border: 2px solid red; */
+  background-color: #f0f0f03e;
+  padding: 20px;
+  margin: 10px 0;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.datePickerContainer {
+  display: flex;
+  gap: 20px;
+  max-width: 600px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  /* border: 2px solid red; */
+}
+
+.datePickerContainer label {
+  display: flex;
+  width: 100%;
+  /* border: 2px solid red; */
+  flex-direction: column;
+}
+
+.datePickerContainer .react-datepicker-wrapper {
+  width: auto;
+}
+
+.datePickerDatePicker {
+  background: #18181B;
+  border-radius: 8px;
+  color: rgb(197, 197, 197);
+  padding: 10px;
+  width: 100%;
+}
+
+@media only screen and (max-width: 800px) {
+  .datePickerContainer {
+      flex-direction: column;
+  }
+}
+
+.labelFilter {
+  margin-bottom: 20px;
+}

@@ -14,6 +14,11 @@ import {
 } from '@nextui-org/react';
 import styles from '@/styles/Stats.module.css';
 import { useRouter } from 'next/navigation';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { PaymentDocument } from '../lib/mongodb/models/payment';
+
+import { Select, SelectItem } from '@nextui-org/react';
 
 interface PaymentStats {
   totalPayments: number;
@@ -37,6 +42,13 @@ const SubscriptionStats: NextPage = () => {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+
+  const [payments, setPayments] = useState<PaymentDocument[]>([]);
+
+  const [filterOption, setFilterOption] = useState<'Active' | 'All'>('All');
+
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -50,6 +62,7 @@ const SubscriptionStats: NextPage = () => {
           throw new Error(paymentData.message || 'Error fetching payment statistics');
         }
 
+        console.log('paymentData', paymentData)
         setPaymentStats(paymentData);
 
         // Fetch users with subscriptions
@@ -76,6 +89,60 @@ const SubscriptionStats: NextPage = () => {
 
     fetchStats();
   }, []);
+
+  useEffect(() => {
+    const fetchPayments = async () => {
+      try {
+        const body: any = {
+            filterOption,
+          };
+          if (startDate) {
+            body.startDate = startDate.toISOString();
+          }
+          if (endDate) {
+            body.endDate = endDate.toISOString();
+          }
+
+        const response = await fetch('/api/payments/by-date', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Error fetching payments by date');
+        }
+
+        setPayments(data.payments || []);
+      } catch (error: any) {
+        console.error('Error fetching payments:', error);
+        setError(error.message);
+      }
+    };
+
+    if (startDate || endDate) {
+        fetchPayments();
+    } else {
+      // Clear payments if no dates are selected
+      setPayments([]);
+    }
+  }, [startDate, endDate, filterOption]);
+
+    // Function to calculate end time
+  const calculateEndTime = (payment: PaymentDocument): string => {
+    const createdAt = new Date(payment.createdAt);
+    let endTime = new Date(createdAt);
+    if (payment.annual) {
+      endTime.setFullYear(endTime.getFullYear() + 1);
+    } else {
+      endTime.setMonth(endTime.getMonth() + 1);
+    }
+    return endTime.toLocaleDateString();
+  };
 
   if (loading) {
     return <div>Loading...</div>;
@@ -150,9 +217,13 @@ const SubscriptionStats: NextPage = () => {
         <p className='mb-2'><strong>Итоговая сумма оплаченных подписок:</strong> {paymentStats.totalCompletedPaymentsAmount}</p>
       </Card>
 
+      <Card className={styles.card}>
+        <h2>Активных подписок: {`${users.length}`}</h2>
+      </Card>
+
       {/* Display Users with Subscriptions */}
       <Card className={styles.card}>
-        <h2>Пользователи с подписками</h2>
+        <h2>Пользователи с активными подписками</h2>
         <Table>
           <TableHeader>
             <TableColumn>User ID</TableColumn>
@@ -174,6 +245,97 @@ const SubscriptionStats: NextPage = () => {
           </TableBody>
         </Table>
       </Card>
+
+      <div className={styles.datesContainer}>
+        <h2 className={styles.labelFilter}>Платежи по датам</h2>
+
+        <div className={styles.datePickerContainer}>
+            <label>
+            Начальная дата:
+            <DatePicker
+                className={styles.datePickerDatePicker}
+                selected={startDate}
+                onChange={(date: Date | null, event?: React.SyntheticEvent<any>) => {
+                    setStartDate(date || undefined);
+                    console.log('Start Date changed:', date);
+                }}
+                selectsStart
+                startDate={startDate}
+                endDate={endDate}
+                dateFormat="dd/MM/yyyy"
+                placeholderText="Выберите начальную дату"
+            />
+            </label>
+            <label>
+            Конечная дата:
+            <DatePicker
+                className={styles.datePickerDatePicker}
+                selected={endDate}
+                onChange={(date: Date | null, event?: React.SyntheticEvent<any>) => {
+                    setEndDate(date || undefined);
+                    console.log('End Date changed:', date);
+                }}
+                selectsEnd
+                startDate={startDate}
+                endDate={endDate}
+                minDate={startDate}
+                dateFormat="dd/MM/yyyy"
+                placeholderText="Выберите конечную дату"
+            />
+            </label>
+        </div>
+
+        <label className={styles.labelFilter}>
+                Фильтр:
+                <Select
+                placeholder="Выберите фильтр"
+                selectedKeys={new Set([filterOption])}
+                onSelectionChange={(keys) => {
+                    const value = Array.from(keys)[0] as 'Active' | 'All';
+                    setFilterOption(value);
+                }}
+                >
+                <SelectItem key="All" value="All">Все</SelectItem>
+                <SelectItem key="Active" value="Active">Активные</SelectItem>
+                </Select>
+        </label>
+
+        <Card className={styles.card}>
+          {payments.length > 0 ? (
+            <>
+              <h2>Платежи</h2>
+              <Table>
+                <TableHeader>
+                  <TableColumn>Payment ID</TableColumn>
+                  <TableColumn>Payment Method</TableColumn>
+                  <TableColumn>State</TableColumn>
+                  <TableColumn>Amount</TableColumn>
+                  <TableColumn>Annual</TableColumn>
+                  <TableColumn>Subscription Type</TableColumn>
+                  <TableColumn>End Time</TableColumn>
+                </TableHeader>
+                <TableBody>
+                  {payments.map((payment) => (
+                    <TableRow key={payment._id}>
+                      <TableCell>{payment.paymentId || payment._id}</TableCell>
+                      <TableCell>{payment.paymentMethod}</TableCell>
+                      <TableCell>{payment.state}</TableCell>
+                      <TableCell>{payment.amount}</TableCell>
+                      <TableCell>{payment.annual ? 'Yes' : 'No'}</TableCell>
+                      <TableCell>{payment.subscriptionType}</TableCell>
+                      <TableCell>{calculateEndTime(payment)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </>
+          ) : (
+            <p>Нет платежей за выбранный период.</p>
+          )}
+        </Card>
+
+    </div>
+
     </div>
   );
 };
