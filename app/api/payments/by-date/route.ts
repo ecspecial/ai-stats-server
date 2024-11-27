@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     if (filterOption === 'Active') {
       // Get all users with subscription 'Free' or 'Pro'
       const users = await User.find({
-        subscription: { $in: ['Free', 'Pro'] },
+        subscription: { $in: ['Free', 'Pro', 'Max'] },
       }).select('subscriptionId');
 
       // Collect subscriptionIds

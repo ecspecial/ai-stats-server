@@ -53,32 +53,38 @@ const SubscriptionStats: NextPage = () => {
     const fetchStats = async () => {
       try {
         setLoading(true);
-
-        // Fetch payment statistics
-        const paymentResponse = await fetch('/api/payments/stats');
-        const paymentData = await paymentResponse.json();
-
-        if (!paymentResponse.ok) {
+  
+        // Prepare the request body for initial load
+        const body: any = {
+          filterOption: 'All', // Default to "All" for the initial load
+        };
+  
+        const response = await fetch('/api/payments/stats', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        });
+  
+        const paymentData = await response.json();
+  
+        if (!response.ok) {
           throw new Error(paymentData.message || 'Error fetching payment statistics');
         }
-
-        console.log('paymentData', paymentData)
+  
+        console.log('paymentData', paymentData);
         setPaymentStats(paymentData);
-
+  
         // Fetch users with subscriptions
         const usersResponse = await fetch('/api/users/subscriptions');
         const usersData = await usersResponse.json();
-
+  
         if (!usersResponse.ok) {
           throw new Error(usersData.message || 'Error fetching users with subscriptions');
         }
-
-        if (!usersResponse.ok) {
-            throw new Error(usersData.message || 'Error fetching users with subscriptions');
-        }
-
-        setUsers(usersData.activeUsers  || []);
-        
+  
+        setUsers(usersData.activeUsers || []);
       } catch (err: any) {
         console.error('Error fetching data:', err);
         setError(err.message);
@@ -86,7 +92,7 @@ const SubscriptionStats: NextPage = () => {
         setLoading(false);
       }
     };
-
+  
     fetchStats();
   }, []);
 
@@ -132,6 +138,46 @@ const SubscriptionStats: NextPage = () => {
     }
   }, [startDate, endDate, filterOption]);
 
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setLoading(true);
+  
+        const body: any = { filterOption };
+        if (startDate) {
+          body.startDate = startDate.toISOString();
+        }
+        if (endDate) {
+          body.endDate = endDate.toISOString();
+        }
+  
+        const response = await fetch('/api/payments/stats', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        });
+  
+        const paymentData = await response.json();
+  
+        if (!response.ok) {
+          throw new Error(paymentData.message || 'Error fetching payment statistics');
+        }
+  
+        console.log('paymentData', paymentData);
+        setPaymentStats(paymentData);
+      } catch (err: any) {
+        console.error('Error fetching stats:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    fetchStats();
+  }, [startDate, endDate, filterOption]);
+
     // Function to calculate end time
   const calculateEndTime = (payment: PaymentDocument): string => {
     const createdAt = new Date(payment.createdAt);
@@ -173,78 +219,6 @@ const SubscriptionStats: NextPage = () => {
           Открыть статистику промптов
         </Button>
       </div>
-
-      <h1>Подписки и Статистика пользователей</h1>
-
-      {/* Display Payment Statistics */}
-      <Card className={styles.card}>
-        <h2 className='mb-2'>Статистика платежей</h2>
-        <p className='mb-2'><strong>Всего платежей:</strong> {paymentStats.totalPayments}</p>
-        <div className='mb-2'>
-          <h3>Платежи по состоянию:</h3>
-          <Table>
-            <TableHeader>
-              <TableColumn>Состояние</TableColumn>
-              <TableColumn>Количество</TableColumn>
-            </TableHeader>
-            <TableBody>
-              {paymentStats.paymentsByState.map((item) => (
-                <TableRow key={item._id}>
-                  <TableCell>{item._id}</TableCell>
-                  <TableCell>{item.count}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-        <div className='mb-2'>
-          <h3>Оплаченные платежи по методам оплаты:</h3>
-          <Table>
-            <TableHeader>
-              <TableColumn>Метод оплаты</TableColumn>
-              <TableColumn>Количество</TableColumn>
-            </TableHeader>
-            <TableBody>
-              {paymentStats.completedPaymentsByMethod.map((item) => (
-                <TableRow key={item._id}>
-                  <TableCell>{item._id}</TableCell>
-                  <TableCell>{item.count}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-        <p className='mb-2'><strong>Итоговая сумма оплаченных подписок:</strong> {paymentStats.totalCompletedPaymentsAmount}</p>
-      </Card>
-
-      <Card className={styles.card}>
-        <h2>Активных подписок: {`${users.length}`}</h2>
-      </Card>
-
-      {/* Display Users with Subscriptions */}
-      <Card className={styles.card}>
-        <h2>Пользователи с активными подписками</h2>
-        <Table>
-          <TableHeader>
-            <TableColumn>User ID</TableColumn>
-            <TableColumn>Имя</TableColumn>
-            <TableColumn>Email</TableColumn>
-            <TableColumn>Подписка</TableColumn>
-            <TableColumn>Конец подписки</TableColumn>
-          </TableHeader>
-          <TableBody>
-            {users.map((user) => (
-              <TableRow key={user._id}>
-                <TableCell>{user._id}</TableCell>
-                <TableCell>{user.name}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>{user.subscription}</TableCell>
-                <TableCell>{user.subscriptionEndDate ? new Date(user.subscriptionEndDate).toLocaleDateString() : 'N/A'}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Card>
 
       <div className={styles.datesContainer}>
         <h2 className={styles.labelFilter}>Платежи по датам</h2>
@@ -335,6 +309,78 @@ const SubscriptionStats: NextPage = () => {
         </Card>
 
     </div>
+
+      <h1>Подписки и Статистика пользователей</h1>
+
+      {/* Display Payment Statistics */}
+      <Card className={styles.card}>
+        <h2 className='mb-2'>Статистика платежей</h2>
+        <p className='mb-2'><strong>Всего платежей:</strong> {paymentStats.totalPayments}</p>
+        <div className='mb-2'>
+          <h3>Платежи по состоянию:</h3>
+          <Table>
+            <TableHeader>
+              <TableColumn>Состояние</TableColumn>
+              <TableColumn>Количество</TableColumn>
+            </TableHeader>
+            <TableBody>
+              {paymentStats.paymentsByState.map((item) => (
+                <TableRow key={item._id}>
+                  <TableCell>{item._id}</TableCell>
+                  <TableCell>{item.count}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+        <div className='mb-2'>
+          <h3>Оплаченные платежи по методам оплаты:</h3>
+          <Table>
+            <TableHeader>
+              <TableColumn>Метод оплаты</TableColumn>
+              <TableColumn>Количество</TableColumn>
+            </TableHeader>
+            <TableBody>
+              {paymentStats.completedPaymentsByMethod.map((item) => (
+                <TableRow key={item._id}>
+                  <TableCell>{item._id}</TableCell>
+                  <TableCell>{item.count}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+        <p className='mb-2'><strong>Итоговая сумма оплаченных подписок:</strong> {paymentStats.totalCompletedPaymentsAmount}</p>
+      </Card>
+
+      <Card className={styles.card}>
+        <h2>Активных подписок: {`${users.length}`}</h2>
+      </Card>
+
+      {/* Display Users with Subscriptions */}
+      <Card className={styles.card}>
+        <h2>Пользователи с активными подписками</h2>
+        <Table>
+          <TableHeader>
+            <TableColumn>User ID</TableColumn>
+            <TableColumn>Имя</TableColumn>
+            <TableColumn>Email</TableColumn>
+            <TableColumn>Подписка</TableColumn>
+            <TableColumn>Конец подписки</TableColumn>
+          </TableHeader>
+          <TableBody>
+            {users.map((user) => (
+              <TableRow key={user._id}>
+                <TableCell>{user._id}</TableCell>
+                <TableCell>{user.name}</TableCell>
+                <TableCell>{user.email}</TableCell>
+                <TableCell>{user.subscription}</TableCell>
+                <TableCell>{user.subscriptionEndDate ? new Date(user.subscriptionEndDate).toLocaleDateString() : 'N/A'}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Card>
 
     </div>
   );
